@@ -1,0 +1,49 @@
+{
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "点点名"
+      }
+    },
+    {
+      "path": "pages/login/login",
+      "style": {
+        "navigationBarTitleText": "登录"
+      }
+    },
+    {
+      "path": "pages/about/about",
+      "style": {
+        "navigationBarTitleText": "关于我们"
+      }
+    },
+    {
+      "path": "pages/activities/activities",
+      "style": {
+        "navigationBarTitleText": "我的活动",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/teacher/teacher",
+      "style": {
+        "navigationBarTitleText": "课堂点名",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/student/student",
+      "style": {
+        "navigationBarTitleText": "我的成长伙伴",
+        "enablePullDownRefresh": true
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "点点名",
+    "navigationBarBackgroundColor": "#f7f8f0",
+    "backgroundColor": "#f7f8f0"
+  }
+}

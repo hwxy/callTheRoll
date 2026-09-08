@@ -1,0 +1,48 @@
+{
+  "name": "rollcall-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev:h5": "uni --host 127.0.0.1 --port 5174",
+    "dev:mp-weixin": "uni -p mp-weixin",
+    "build:h5": "uni build",
+    "build:mp-weixin": "uni build -p mp-weixin",
+    "test": "node --test tests/*.test.mjs",
+    "lint": "eslint .",
+    "format": "prettier --write src"
+  },
+  "dependencies": {
+    "@dcloudio/uni-app": "3.0.0-5020420260813003",
+    "@dcloudio/uni-components": "3.0.0-5020420260813003",
+    "@dcloudio/uni-h5": "3.0.0-5020420260813003",
+    "@dcloudio/uni-mp-weixin": "3.0.0-5020420260813003",
+    "vue": "3.4.21",
+    "vue-i18n": "9.14.5"
+  },
+  "devDependencies": {
+    "@dcloudio/uni-cli-shared": "3.0.0-5020420260813003",
+    "@dcloudio/vite-plugin-uni": "3.0.0-5020420260813003",
+    "@vue/runtime-core": "3.4.21",
+    "vite": "5.2.8",
+    "eslint": "9.39.5",
+    "eslint-plugin-vue": "10.0.0",
+    "prettier": "3.5.3"
+  },
+  "overrides": {
+    "@babel/core": "7.29.7",
+    "@intlify/core-base": "9.14.5",
+    "@intlify/shared": "9.14.5",
+    "@intlify/message-resolver": "9.1.11",
+    "adm-zip": "0.6.0",
+    "postcss": "8.5.28",
+    "postcss-selector-parser": "6.1.3",
+    "ws": "8.21.3",
+    "qs": "6.16.0",
+    "body-parser": "1.20.6",
+    "cookie": "0.7.2",
+    "jpeg-js": "0.4.4",
+    "path-to-regexp": "0.1.13",
+    "phin": "3.7.1",
+    "send": "0.19.0"
+  }
+}

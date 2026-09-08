@@ -1,0 +1,29 @@
+server:
+  address: ${SERVER_ADDRESS:127.0.0.1}
+  port: ${PORT:8000}
+  error:
+    include-message: never
+spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:prod}
+  application:
+    name: rollcall
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 3MB
+  jackson:
+    default-property-inclusion: non_null
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: auto
+springdoc:
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:false}
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:false}
+app:
+  session-hours: 12

@@ -1,0 +1,11 @@
+{
+  "name": "点点名",
+  "appid": "",
+  "description": "学生点名与宠物成长",
+  "versionName": "1.0.0",
+  "versionCode": "100",
+  "vueVersion": "3",
+  "uniStatistics": { "enable": false },
+  "mp-weixin": { "appid": "", "setting": { "urlCheck": true }, "usingComponents": true },
+  "h5": { "router": { "mode": "hash" }, "title": "点点名" }
+}
