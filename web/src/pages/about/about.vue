@@ -41,7 +41,7 @@ onPullDownRefresh(load)
 <template>
   <view class="app-page about-page">
     <view class="page-top">
-      <view class="app-brand"><text class="brand-stamp">点</text><text>点点名</text></view>
+      <view class="app-brand"><text class="brand-stamp">点</text><text>点名星球</text></view>
     </view>
     <view class="about-hero">
       <text class="about-index">01 / ABOUT</text>
@@ -61,7 +61,7 @@ onPullDownRefresh(load)
         }}</text>
       </view>
       <view class="letter-sign">
-        <text>点点名团队</text><text>和课堂一起成长 ↗</text>
+        <text>点名星球团队</text><text>和课堂一起成长 ↗</text>
       </view>
     </view>
     <text v-if="updatedAt" class="footnote">更新于 {{ updatedAt.replace('T', ' ') }}</text>

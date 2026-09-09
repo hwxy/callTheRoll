@@ -32,7 +32,7 @@ async function submit() {
 </script>
 <template>
   <view class="app-page login-page"
-    ><view class="app-brand"><text class="brand-stamp">点</text><text>点点名</text></view
+    ><view class="app-brand"><text class="brand-stamp">点</text><text>点名星球</text></view
     ><view class="hero-copy"
       ><text class="overline">WELCOME BACK</text
       ><text class="hero-title">你的成长故事，<br />继续发生。</text

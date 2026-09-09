@@ -244,6 +244,26 @@ server/target/rollcall-server-1.0.0.jar
 
 生产环境建议由 Apache 或 Nginx 将 HTTPS API 域名反向代理到 `127.0.0.1:8000`。Swagger 默认关闭，并应使用专用数据库账号、受保护的 Redis 和强随机密码。
 
+### H5 搜索与 AI 检索优化
+
+执行 `npm run build:h5` 时，会在 `web/dist/build/h5/` 自动生成面向搜索与 AI 检索的公开中文页面：
+
+```text
+/teacher/             老师端功能
+/student/             学生端功能
+/random-roll-call/    随机点名规则
+/multi-teacher/       多老师协作
+/faq/                 常见问题
+/about/               关于我们
+/robots.txt           爬虫访问规则
+/sitemap.xml          站点地图
+/llms.txt              文本辅助摘要
+```
+
+这些页面包含独立标题、摘要、canonical、Open Graph 信息、可见中文正文和 JSON-LD 结构化数据。部署 H5 时应上传整个 `web/dist/build/h5/` 目录，并确认服务器能够直接访问上述目录地址，不能把所有路径都重写到业务应用的 `index.html`。
+
+上线后可将 `https://dianmingfront.hwaxy.cn/sitemap.xml` 提交到百度搜索资源平台、神马站长平台、Google Search Console 和 Bing Webmaster Tools。
+
 ## 测试与检查
 
 ```bash
@@ -313,5 +333,4 @@ git grep -nEi 'password|secret|token|api[_-]?key|private[_-]?key'
 
 有什么需要帮助的可联系
 ![联系](产品图/联系.png)
-
 

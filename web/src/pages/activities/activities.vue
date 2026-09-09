@@ -56,7 +56,7 @@ onPullDownRefresh(() => load())
 <template>
   <view class="app-page"
     ><view class="page-top"
-      ><view class="app-brand"><text class="brand-stamp">点</text><text>点点名</text></view
+      ><view class="app-brand"><text class="brand-stamp">点</text><text>点名星球</text></view
       ><view class="top-actions"><button class="text-button" @click="about">关于</button
         ><button class="text-button" @click="logout">退出</button></view></view
     ><view class="hero-copy compact"

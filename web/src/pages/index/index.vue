@@ -27,6 +27,9 @@ function about() {
   uni.navigateTo({ url: '/pages/about/about' })
 }
 onShow(() => {
+  if (typeof document !== 'undefined') {
+    document.title = '点名星球｜课堂随机点名与学生成长激励小程序'
+  }
   if (auth.token()) uni.reLaunch({ url: '/pages/activities/activities' })
 })
 onHide(stop)
@@ -35,7 +38,7 @@ onUnload(stop)
 <template>
   <view class="app-page home"
     ><view class="app-brand"
-      ><text class="brand-stamp">点</text><text>点点名</text
+      ><text class="brand-stamp">点</text><text>点名星球</text
       ><text class="brand-tag">课堂成长伙伴</text></view
     ><view class="hero-copy"
       ><text class="overline">A LITTLE MOMENT. A BIG GROWTH.</text

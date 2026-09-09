@@ -3,7 +3,7 @@
     {
       "path": "pages/index/index",
       "style": {
-        "navigationBarTitleText": "点点名"
+        "navigationBarTitleText": "点名星球"
       }
     },
     {
@@ -42,7 +42,7 @@
   ],
   "globalStyle": {
     "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "点点名",
+    "navigationBarTitleText": "点名星球",
     "navigationBarBackgroundColor": "#f7f8f0",
     "backgroundColor": "#f7f8f0"
   }
