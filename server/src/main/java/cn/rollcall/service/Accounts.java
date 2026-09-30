@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 
 @Service
 public class Accounts {
+    public static final String ROSTER_STUDENT_PREFIX = "@roster:";
     public record Input(@NotBlank @Size(max=80) String name,@Size(max=64) String studentNo,
         @Size(max=20) String phone,String password,@NotBlank String role,Long ownerTeacherId,
         @NotNull Boolean enabled,Integer version) {}
@@ -25,6 +26,7 @@ public class Accounts {
     }
     public Object list(User actor,int page,int size,String search) {
         Access.staff(actor);var q=new QueryWrapper<User>();
+        q.and(w->w.isNull("student_no").or().notLike("student_no",ROSTER_STUDENT_PREFIX+"%"));
         if(!Access.admin(actor)) q.eq("role","STUDENT").eq("owner_teacher_id",actor.id);
         if(clean(search)!=null) q.and(w->w.like("name",search).or().like("student_no",search).or().like("phone",search));
         return users.selectPage(new Page<>(Math.max(page,1),Math.clamp(size,1,100)),q.orderByDesc("id"));
@@ -57,8 +59,20 @@ public class Accounts {
     @Transactional public User create(User actor,Input input) {
         var u=prepare(actor,input,null);password(input.password());u.passwordHash=encoder.encode(input.password());return insert(actor,u);
     }
+    @Transactional public User registerTeacher(String name,String phone,String rawPassword) {
+        User u=new User();u.name=clean(name);u.phone=clean(phone);
+        Problem.require(u.name!=null&&u.name.length()<=80,400,"姓名不能为空且最多 80 字");
+        Problem.require(u.phone!=null&&u.phone.matches("1[3-9][0-9]{9}"),400,"请输入 11 位中国大陆手机号");
+        password(rawPassword);
+        Problem.require(users.byAlias(u.phone)==null,409,"该手机号已注册，请直接登录");
+        u.role="TEACHER";u.enabled=true;u.authVersion=0;u.version=0;
+        u.passwordHash=encoder.encode(rawPassword);
+        users.insert(u);users.addAlias(u.phone,u.id);
+        return users.selectById(u.id);
+    }
     @Transactional public User update(User actor,Long id,Input input) {
         User previous=users.lock(id);Access.account(actor,previous);
+        Problem.require(!isRosterStudent(previous),403,"活动名单成员不是可登录账号");
         Problem.require(input.version()!=null&&input.version().equals(previous.version),409,"账号已被修改，请刷新后重试");
         Problem.require(!actor.id.equals(id)||(previous.role.equals(input.role())&&input.enabled()),400,"不能停用自己或改变自己的角色");
         if(!previous.role.equals(input.role())) Problem.require(users.ownedCount(id)==0&&users.relationCount(id)==0,409,"账号已有业务关联，不能改变角色");
@@ -71,9 +85,13 @@ public class Accounts {
     }
     @Transactional public void reset(User actor,Long id,String password) {
         var u=users.lock(id);Access.account(actor,u);password(password);
+        Problem.require(!isRosterStudent(u),403,"活动名单成员不是可登录账号");
         u.passwordHash=encoder.encode(password);u.authVersion++;users.updateById(u);audit.audit(actor.id,"PASSWORD_RESET",id);
     }
     public String hashPassword(String value) {password(value);return encoder.encode(value);}
+    public static boolean isRosterStudent(User user) {
+        return user != null && user.studentNo != null && user.studentNo.startsWith(ROSTER_STUDENT_PREFIX);
+    }
     public record ImportRow(String name,String studentNo,String phone,Long ownerTeacherId,String passwordHash) {}
     @Transactional public int importRows(User actor,List<ImportRow> rows) {
         Problem.require(!rows.isEmpty()&&rows.size()<=500,400,"每次导入 1～500 名学生");

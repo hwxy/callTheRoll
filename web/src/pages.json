@@ -9,13 +9,28 @@
     {
       "path": "pages/login/login",
       "style": {
-        "navigationBarTitleText": "登录"
+        "navigationBarTitleText": "登录",
+        // #ifdef H5
+        "navigationStyle": "custom"
+        // #endif
       }
     },
     {
-      "path": "pages/about/about",
+      "path": "pages/register/register",
       "style": {
-        "navigationBarTitleText": "关于我们"
+        "navigationBarTitleText": "账号注册",
+        // #ifdef H5
+        "navigationStyle": "custom"
+        // #endif
+      }
+    },
+    {
+      "path": "pages/help/help",
+      "style": {
+        "navigationBarTitleText": "功能使用说明",
+        // #ifdef H5
+        "navigationStyle": "custom"
+        // #endif
       }
     },
     {

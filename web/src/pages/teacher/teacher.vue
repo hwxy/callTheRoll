@@ -1,8 +1,9 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { onLoad, onShow, onHide, onUnload, onPullDownRefresh } from '@dcloudio/uni-app'
+import Pet from '../../components/Pet.vue'
 import { api, requireUser, notify, confirm } from '../../lib/api'
-import { requestKey } from '../../lib/domain.mjs'
+import { pets, requestKey } from '../../lib/domain.mjs'
 const id = ref(null),
   data = ref(null),
   records = ref([]),
@@ -18,6 +19,12 @@ let timer,
   refreshInFlight = false,
   visible = false
 const pending = computed(() => data.value?.pending)
+const selectedMember = computed(() =>
+  pending.value ? data.value?.members.find((member) => member.id === pending.value.studentId) : null,
+)
+function petName(key) {
+  return pets.find((pet) => pet.key === key)?.name || '成长伙伴'
+}
 const selectedName = computed(() =>
   rolling.value
     ? animationName.value
@@ -160,6 +167,12 @@ onPullDownRefresh(load)
         ><text class="subtext">{{
           pending ? '一个小小的鼓励，让参与更有力量。' : '每个人，都值得一次勇敢表达的机会。'
         }}</text
+        ><view v-if="selectedMember" class="current-growth-card"
+          ><view class="current-growth-pet"><Pet :kind="selectedMember.pet || 'cat'" :level="selectedMember.level || 1" :animate="false" /></view
+          ><view class="current-growth-copy"><text class="current-growth-name">{{ selectedMember.name }}</text
+            ><text class="current-growth-meta">{{ selectedMember.points }} 分 · {{ selectedMember.level }} 级 · {{ petName(selectedMember.pet) }}</text
+            ><text class="current-growth-note">宠物成长只记录在这场活动中</text></view
+          ><text class="current-growth-star">✦</text></view
         ><view v-if="pending" class="award-actions"
           ><button class="primary-button" :disabled="busy" @click="resolve(true)">
             表现很棒，加 1 分 ✦</button
@@ -182,13 +195,13 @@ onPullDownRefresh(load)
           >所有共享老师看到同一结果，确认后可继续点名。</text
         ></view
       ><view v-else-if="tab === 'members'" class="white-card"
-        ><text class="section-title">活动成员 · {{ data.members.length }} 人</text
-        ><view v-for="s in data.members" :key="s.id" class="record-row"
-          ><text>{{ s.name }}</text
-          ><text class="hint"
-            >{{ s.studentNo || '—' }}{{ s.enabled ? '' : ' · 已停用' }}</text
-          ></view
-        ><text v-if="!data.members.length" class="hint">请在管理后台添加学生。</text></view
+        ><view class="member-list-heading"><text class="section-title">活动成员 · {{ data.members.length }} 人</text><text class="member-list-hint">每 10 分升 1 级 · 宠物仅属于本活动</text></view
+        ><view v-for="s in data.members" :key="s.id" class="member-growth-row"
+          ><view class="member-pet-frame"><Pet :kind="s.pet || 'cat'" :level="s.level || 1" :animate="false" /></view
+          ><view class="member-growth-info"><text class="member-name">{{ s.name }}</text
+            ><text class="member-pet-name">{{ petName(s.pet) }}</text></view
+          ><view class="member-growth-score"><text class="member-level">{{ s.level }}<small>级</small></text><text class="member-points">{{ s.points }} 分</text></view></view
+        ><view v-if="!data.members.length" class="small-empty">暂无成员，请返回活动列表录入学生名单。</view></view
       ><view v-else class="white-card"
         ><text class="section-title">最近 100 条记录</text
         ><view v-for="r in records" :key="r.id" class="record-row"
@@ -199,7 +212,32 @@ onPullDownRefresh(load)
             { PENDING: '待确认', AWARDED: '+1', SKIPPED: '未加分' }[r.status]
           }}</text></view
         ><text v-if="!records.length" class="hint">还没有点名记录，开始第一次点名吧。</text></view
-      ></view
-    ></view
-  >
+      ></view>
+    </view>
 </template>
+
+<style scoped>
+.current-growth-card { display: flex; align-items: center; gap: 13px; width: min(380px, 100%); margin: 0 auto 20px; padding: 10px 14px; border: 1px solid #dfe9d7; border-radius: 15px; background: #fffef7; text-align: left; }
+.current-growth-pet { position: relative; flex: 0 0 48px; width: 48px; height: 48px; overflow: hidden; }
+.current-growth-pet :deep(.pet-frame), .member-pet-frame :deep(.pet-frame) { position: absolute; top: 0; left: 0; width: 220px; height: 220px; margin: 0; transform: scale(.22); transform-origin: top left; }
+.current-growth-copy { flex: 1; min-width: 0; }
+.current-growth-name, .current-growth-meta, .current-growth-note { display: block; }
+.current-growth-name { color: #365744; font-size: 14px; font-weight: 700; }
+.current-growth-meta { margin-top: 4px; color: #937d43; font-size: 11px; }
+.current-growth-note { margin-top: 3px; color: #99a394; font-size: 9px; }
+.current-growth-star { color: #c7aa66; font-size: 20px; }
+.member-list-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 7px; margin-bottom: 5px; }
+.member-list-hint { color: #9ba797; font-size: 10px; }
+.member-growth-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid #eff1e8; }
+.member-growth-row:last-child { border-bottom: 0; }
+.member-pet-frame { position: relative; flex: 0 0 46px; width: 46px; height: 46px; overflow: hidden; border-radius: 50%; background: #f2f5e9; }
+.member-pet-frame :deep(.pet-frame) { transform: scale(.21); }
+.member-growth-info { flex: 1; min-width: 0; }
+.member-growth-info text { display: block; }
+.member-name { color: #3d5949; font-size: 13px; font-weight: 700; }
+.member-pet-name { margin-top: 4px; color: #94a08f; font-size: 10px; }
+.member-growth-score { min-width: 44px; text-align: right; }
+.member-level { display: block; color: #ae9251; font-size: 17px; font-weight: 700; }
+.member-level small { margin-left: 2px; font-size: 10px; font-weight: 500; }
+.member-points { display: block; margin-top: 2px; color: #788878; font-size: 10px; }
+</style>

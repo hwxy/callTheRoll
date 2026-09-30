@@ -25,6 +25,6 @@ public interface UserMapper extends BaseMapper<User> {
     @Select("SELECT (SELECT COUNT(*) FROM activity WHERE creator_id=#{id}) + (SELECT COUNT(*) FROM activity_teacher WHERE teacher_id=#{id}) + (SELECT COUNT(*) FROM activity_student WHERE student_id=#{id})")
     long relationCount(Long id);
 
-    @Select("SELECT id,name FROM app_user WHERE role='TEACHER' AND enabled=1 ORDER BY id DESC")
+    @Select("SELECT id,name,student_no AS studentNo,phone FROM app_user WHERE role='TEACHER' AND enabled=1 ORDER BY id DESC")
     List<java.util.Map<String, Object>> teachers();
 }

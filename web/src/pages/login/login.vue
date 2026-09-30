@@ -6,6 +6,12 @@ const login = ref(''),
   password = ref(''),
   busy = ref(false),
   error = ref('')
+function register() {
+  uni.navigateTo({ url: '/pages/register/register' })
+}
+function backHome() {
+  uni.reLaunch({ url: '/pages/index/index' })
+}
 async function submit() {
   if (!login.value.trim() || !password.value) {
     error.value = '请输入账号和密码'
@@ -18,6 +24,7 @@ async function submit() {
       method: 'POST',
       body: { login: login.value.trim(), password: password.value },
     })
+    if (r.user.role !== 'TEACHER') throw new Error('目前前台暂时仅支持老师账号登录')
     const url = destinationFor(r.user.role)
     if (!url) throw new Error('系统管理员请使用管理后台')
     auth.save(r.token)
@@ -32,13 +39,13 @@ async function submit() {
 </script>
 <template>
   <view class="app-page login-page"
-    ><view class="app-brand"><text class="brand-stamp">点</text><text>点名星球</text></view
+    ><view class="login-top"><view class="app-brand"><text class="brand-stamp">点</text><text>点名星球</text></view><button class="login-back" @click="backHome">← 返回首页</button></view
     ><view class="hero-copy"
-      ><text class="overline">WELCOME BACK</text
-      ><text class="hero-title">你的成长故事，<br />继续发生。</text
-      ><text class="subtext">输入账号，回到属于你的课堂。</text></view
+      ><text class="overline">TEACHER WORKSPACE</text
+      ><text class="hero-title">今天的课堂，<br />从这里开始。</text
+      ><text class="subtext">老师登录后创建活动、点名并陪伴学生成长。</text></view
     ><view class="white-card login-form"
-      ><text class="input-label">学号 / 手机号</text
+      ><text class="input-label">账号</text
       ><input
         v-model="login"
         class="text-input"
@@ -57,9 +64,17 @@ async function submit() {
       /><text v-if="error" class="error-text">{{ error }}</text
       ><button class="primary-button" :loading="busy" :disabled="busy" @click="submit">
         进入课堂 ↗</button
-      ><text class="hint center">系统根据账号自动识别老师或学生身份</text></view
+      ><view class="register-prompt"><text>还没有老师账号？</text><button class="register-link" @click="register">账号注册 ↗</button></view></view
     ><text class="footnote"
-      >账号由老师或管理员创建<br />忘记密码？请联系你的账号管理员。</text
-    ></view
-  >
+      >请使用老师账号登录<br />忘记密码？请联系账号管理员。</text>
+    </view>
 </template>
+
+<style scoped>
+.login-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.login-back { flex: 0 0 auto; margin: 0; padding: 9px 14px; border: 1px solid #d8e6d8; border-radius: 999px; background: rgba(255,255,255,.64); color: #5c7c6b; font-size: 11px; line-height: 1.2; }
+.login-back::after { border: 0; }
+.register-prompt { display: flex; align-items: center; justify-content: center; gap: 5px; margin-top: 18px; color: #87988b; font-size: 11px; }
+.register-link { margin: 0; padding: 4px 7px; border-radius: 7px; background: transparent; color: #267b6d; font-size: 11px; font-weight: 700; line-height: 1.4; }
+.register-link::after { border: 0; }
+</style>

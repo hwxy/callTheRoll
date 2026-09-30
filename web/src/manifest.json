@@ -9,6 +9,6 @@
   "mp-weixin": { "appid": "", "setting": { "urlCheck": true }, "usingComponents": true },
   "h5": {
     "router": { "mode": "hash" },
-    "title": "点名星球｜课堂随机点名与学生成长激励小程序"
+    "title": "课堂随机点名小程序｜班级点名与课堂互动工具 - 点名星球"
   }
 }

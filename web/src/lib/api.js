@@ -55,9 +55,10 @@ export async function requireUser(role) {
     return null
   }
   const user = await api('/auth/me')
-  if (!['TEACHER', 'STUDENT'].includes(user.role)) {
+  if (user.role !== 'TEACHER') {
     auth.clear()
-    throw new Error('系统管理员请使用管理后台')
+    uni.reLaunch({ url: '/pages/login/login' })
+    throw new Error('目前前台暂时仅支持老师账号登录')
   }
   if (role && user.role !== role) {
     uni.reLaunch({ url: '/pages/activities/activities' })

@@ -19,8 +19,10 @@ public interface ActivityMapper extends BaseMapper<Activity> {
     void addStudent(@Param("id") Long id,@Param("student") Long student);
     @Select("SELECT COUNT(*) FROM activity_student WHERE activity_id=#{id} AND student_id=#{student} AND active=1")
     long isMember(@Param("id") Long id,@Param("student") Long student);
-    @Select("SELECT u.id,u.name,u.student_no AS studentNo,u.enabled FROM activity_student s JOIN app_user u ON u.id=s.student_id WHERE s.activity_id=#{id} AND s.active=1 ORDER BY u.id")
+    @Select("SELECT u.id,u.name,CASE WHEN u.student_no LIKE '@roster:%' THEN NULL ELSE u.student_no END AS studentNo,u.enabled,s.points,s.pet FROM activity_student s JOIN app_user u ON u.id=s.student_id WHERE s.activity_id=#{id} AND s.active=1 ORDER BY u.id")
     List<Map<String,Object>> members(Long id);
+    @Update("UPDATE activity_student SET pet=#{pet} WHERE activity_id=#{id} AND student_id=#{student} AND active=1 AND pet IS NULL")
+    int assignPetIfMissing(@Param("id") Long id,@Param("student") Long student,@Param("pet") String pet);
     @Select("<script>SELECT u.id FROM activity_student s JOIN app_user u ON u.id=s.student_id WHERE s.activity_id=#{id} AND s.active=1 AND u.enabled=1 AND u.role='STUDENT' <if test='!repeat'>AND NOT EXISTS(SELECT 1 FROM draw_record d WHERE d.activity_id=#{id} AND d.round_no=#{round} AND d.student_id=u.id)</if> ORDER BY u.id</script>")
     List<Long> candidates(@Param("id") Long id,@Param("round") int round,@Param("repeat") boolean repeat);
     @Select("SELECT points,pet FROM activity_student WHERE activity_id=#{id} AND student_id=#{student} AND active=1")

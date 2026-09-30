@@ -212,7 +212,7 @@ npm run build:mp-weixin
 web/dist/build/mp-weixin
 ```
 
-真机运行需要可访问的 HTTPS API，并在微信公众平台配置 request 合法域名。
+小程序构建会将帮助截图改为从 `https://dianmingfront.hwaxy.cn/static/help/teacher-classroom.png` 加载，不把 H5 图片打入小程序包；请在微信公众平台将 `dianmingfront.hwaxy.cn` 配置为下载文件合法域名。真机运行还需要可访问的 HTTPS API，并配置 request 合法域名。
 
 ## 构建生产版本
 
@@ -333,4 +333,3 @@ git grep -nEi 'password|secret|token|api[_-]?key|private[_-]?key'
 
 有什么需要帮助的可联系
 ![联系](产品图/联系.png)
-

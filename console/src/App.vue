@@ -7,6 +7,8 @@ import ActivitiesView from './views/ActivitiesView.vue'
 import AccountsView from './views/AccountsView.vue'
 import RolesView from './views/RolesView.vue'
 import SiteSettingsView from './views/SiteSettingsView.vue'
+import FeedbackView from './views/FeedbackView.vue'
+import AnalyticsView from './views/AnalyticsView.vue'
 const user = ref(null),
   page = ref('activities'),
   busy = ref(false),
@@ -55,7 +57,19 @@ async function logout() {
 onMounted(async () => {
   window.addEventListener('session-expired', expired)
   try {
-    if (auth.token()) {
+    const params = new URLSearchParams(window.location.hash.slice(1))
+    const ticket = params.get('ticket')
+    if (ticket) {
+      window.history.replaceState({}, document.title, window.location.pathname + window.location.search)
+      auth.clear()
+      const result = await api('/auth/console-ticket/exchange', {
+        method: 'POST',
+        body: { ticket },
+      })
+      if (!canUseConsole(result.user)) throw new Error('此账号不能使用管理后台')
+      auth.save(result.token)
+      user.value = result.user
+    } else if (auth.token()) {
       const me = await api('/auth/me')
       if (!canUseConsole(me)) throw new Error('当前账号不能使用管理后台')
       user.value = me
@@ -95,7 +109,7 @@ onUnmounted(() => window.removeEventListener('session-expired', expired))
         <h2>欢迎回到课堂</h2>
         <p class="muted">登录后，系统将自动识别你的账号身份。</p>
         <form @submit.prevent="signIn">
-          <label for="account">学号 / 手机号</label
+          <label for="account">账号</label
           ><el-input
             id="account"
             v-model="login"
@@ -165,6 +179,8 @@ onUnmounted(() => window.removeEventListener('session-expired', expired))
       <AccountsView v-else-if="page === 'accounts'" :user="user" />
       <RolesView v-else-if="page === 'roles' && user.role === 'ADMIN'" />
       <SiteSettingsView v-else-if="page === 'settings' && user.role === 'ADMIN'" />
+      <FeedbackView v-else-if="page === 'feedback' && user.role === 'ADMIN'" />
+      <AnalyticsView v-else-if="page === 'analytics' && user.role === 'ADMIN'" />
     </section>
   </div>
 </template>

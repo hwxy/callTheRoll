@@ -71,4 +71,14 @@ public final class Models {
         @Version
         public Integer version;
     }
+
+    @TableName("user_feedback")
+    public static class Feedback {
+        @TableId(type = IdType.AUTO)
+        public Long id;
+        public String title;
+        public String content;
+        public String contact;
+        public LocalDateTime createdAt;
+    }
 }

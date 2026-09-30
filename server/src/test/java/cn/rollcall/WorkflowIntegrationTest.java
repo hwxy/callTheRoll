@@ -98,6 +98,19 @@ class WorkflowIntegrationTest {
         activities.pet(student,a.id,"rabbit");assertThrows(Problem.class,()->activities.pet(student,a.id,"cat"));
         assertEquals(10,points(a,student));
     }
+    @Test void teacherCanCreateRosterNamesWithActivityScopedPetGrowth(){
+        Activity a=(Activity)activities.create(teacher,new Activities.Input("名单课堂",false,List.of(),List.of(),List.of("林小满","陈星野"),null));
+        var detail=(Map<?,?>)activities.detail(teacher,a.id);var members=(List<Map<String,Object>>)detail.get("members");
+        assertEquals(2,members.size());assertEquals(Set.of("林小满","陈星野"),Set.of(members.get(0).get("name"),members.get(1).get("name")));
+        for(var member:members){
+            assertTrue(Set.of("cat","rabbit","dragon").contains(member.get("pet")));assertEquals(1,member.get("level"));
+            User hidden=users.selectById(((Number)member.get("id")).longValue());assertTrue(hidden.studentNo.startsWith(Accounts.ROSTER_STUDENT_PREFIX));assertNull(users.byAlias(hidden.studentNo));
+        }
+        var draw=draw(teacher,a,"roster0001");activities.resolve(teacher,a.id,draw.id,true);
+        var refreshed=(Map<?,?>)activities.detail(teacher,a.id);var updated=(List<Map<String,Object>>)refreshed.get("members");
+        assertTrue(updated.stream().anyMatch(member->Integer.valueOf(1).equals(member.get("points"))));
+        assertTrue(updated.stream().allMatch(member->Integer.valueOf(1).equals(member.get("level"))));
+    }
     @Test void removedAndReaddedStudentKeepsPointsAndRoundExclusion(){
         Activity a=activity(false,student.id);var d=draw(teacher,a,"round0001");activities.resolve(teacher,a.id,d.id,true);
         activities.update(teacher,a.id,input(mapper.selectById(a.id),List.of(),List.of(other.id),false));

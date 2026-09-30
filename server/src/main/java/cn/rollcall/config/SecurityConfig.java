@@ -37,6 +37,10 @@ public class SecurityConfig {
             @Override
             protected boolean shouldNotFilter(HttpServletRequest r) {
                 return "OPTIONS".equals(r.getMethod()) || !r.getRequestURI().startsWith("/api/v1/") || r.getRequestURI().equals("/api/v1/auth/login")
+                        || ("POST".equals(r.getMethod()) && r.getRequestURI().equals("/api/v1/auth/register/teacher"))
+                        || ("POST".equals(r.getMethod()) && r.getRequestURI().equals("/api/v1/auth/console-ticket/exchange"))
+                        || ("POST".equals(r.getMethod()) && r.getRequestURI().equals("/api/v1/analytics/home-visit"))
+                        || ("POST".equals(r.getMethod()) && r.getRequestURI().equals("/api/v1/feedback"))
                         || ("GET".equals(r.getMethod()) && r.getRequestURI().equals("/api/v1/site/about"));
             }
 
@@ -67,7 +71,9 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(a -> a
                         .requestMatchers(HttpMethod.GET, "/api/v1/site/about").permitAll()
-                        .requestMatchers("/api/v1/auth/login", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/error").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/analytics/home-visit").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/feedback").permitAll()
+                        .requestMatchers("/api/v1/auth/login", "/api/v1/auth/register/teacher", "/api/v1/auth/console-ticket/exchange", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/error").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e.authenticationEntryPoint((r, s, x) -> s.sendError(401)))
                 .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class).build();

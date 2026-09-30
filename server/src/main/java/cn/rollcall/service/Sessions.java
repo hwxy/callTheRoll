@@ -36,6 +36,24 @@ public class Sessions {
         redis.opsForValue().set("rollcall:session:"+digest(token),u.id+":"+u.authVersion+":"+client,Duration.ofHours(hours));
         return token;
     }
+    public String createConsoleTicket(User user) {
+        Problem.require("TEACHER".equals(user.role),403,"仅老师账号可以进入管理后台");
+        byte[] bytes=new byte[32];random.nextBytes(bytes);
+        String ticket=Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        redis.opsForValue().set("rollcall:console-ticket:"+digest(ticket),user.id+":"+user.authVersion,Duration.ofSeconds(60));
+        return ticket;
+    }
+    public Map<String,Object> exchangeConsoleTicket(String ticket) {
+        Problem.require(ticket!=null && ticket.length()<=128,401,"登录凭证无效或已过期");
+        var consume=new DefaultRedisScript<String>("local v=redis.call('GET',KEYS[1]); if v then redis.call('DEL',KEYS[1]) end; return v",String.class);
+        String value=redis.execute(consume,List.of("rollcall:console-ticket:"+digest(ticket)));
+        Problem.require(value!=null,401,"登录凭证无效或已过期");
+        String[] parts=value.split(":");
+        User user=users.selectById(Long.valueOf(parts[0]));
+        Problem.require(user!=null && Boolean.TRUE.equals(user.enabled) && user.authVersion.toString().equals(parts[1]),401,"账号状态已改变，请重新登录");
+        Problem.require("TEACHER".equals(user.role),403,"仅老师账号可以进入管理后台");
+        return Map.of("token",create(user,"console"),"user",user);
+    }
     public void checkFailures(String alias) {
         String count=redis.opsForValue().get("rollcall:limit:"+digest("login:"+alias));
         Problem.require(count==null||Long.parseLong(count)<10,429,"密码尝试次数过多，请 10 分钟后再试");

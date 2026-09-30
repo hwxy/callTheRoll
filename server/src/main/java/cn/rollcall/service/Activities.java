@@ -11,14 +11,21 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Service
 public class Activities {
     public record Input(@NotBlank @Size(max=100) String name,@NotNull Boolean repeatDraw,
-        @NotNull @Size(max=1000) List<@NotNull Long> studentIds,@NotNull @Size(max=100) List<@NotNull Long> teacherIds,Integer version){}
-    private final ActivityMapper activities;private final UserMapper users;private final DrawMapper draws;
+        @NotNull @Size(max=1000) List<@NotNull Long> studentIds,@NotNull @Size(max=100) List<@NotNull Long> teacherIds,
+        @Size(max=200) List<@NotBlank @Size(max=80) String> studentNames,Integer version){
+        public Input(String name,Boolean repeatDraw,List<Long> studentIds,List<Long> teacherIds,Integer version){
+            this(name,repeatDraw,studentIds,teacherIds,null,version);
+        }
+    }
+    private static final List<String> PETS=List.of("cat","rabbit","dragon");
+    private final ActivityMapper activities;private final UserMapper users;private final DrawMapper draws;private final PasswordEncoder passwords;
     private final SecureRandom random=new SecureRandom();
-    public Activities(ActivityMapper activities,UserMapper users,DrawMapper draws){this.activities=activities;this.users=users;this.draws=draws;}
+    public Activities(ActivityMapper activities,UserMapper users,DrawMapper draws,PasswordEncoder passwords){this.activities=activities;this.users=users;this.draws=draws;this.passwords=passwords;}
     public Activity authorize(User actor,Long id,boolean lock) {
         Activity a=lock?activities.lock(id):activities.selectById(id);Problem.require(a!=null,404,"活动不存在或已删除");
         if("STUDENT".equals(actor.role))Problem.require(activities.isMember(id,actor.id)>0,403,"你尚未加入此活动");
@@ -38,8 +45,11 @@ public class Activities {
     }
     public Object detail(User actor,Long id) {
         Access.staff(actor);Activity a=authorize(actor,id,false);
+        for(Long studentId:activities.studentIds(id))activities.assignPetIfMissing(id,studentId,randomPet());
+        var members=activities.members(id);
+        members.forEach(member->{int points=((Number)member.get("points")).intValue();member.put("level",1+points/10);});
         var result=new LinkedHashMap<String,Object>();result.put("activity",a);result.put("teacherIds",activities.teacherIds(id));
-        result.put("studentIds",activities.studentIds(id));result.put("members",activities.members(id));result.put("pending",pending(id));
+        result.put("studentIds",activities.studentIds(id));result.put("members",members);result.put("pending",pending(id));
         result.put("remaining",activities.candidates(id,a.roundNo,a.repeatDraw).size());return result;
     }
     private Set<Long> teacherPool(Activity a,List<Long> shared) {
@@ -51,7 +61,27 @@ public class Activities {
         else {var a=authorize(actor,id,false);pool=teacherPool(a,proposedTeachers);}
         Problem.require(pool.size()<=101,400,"最多共享给 100 位老师");
         return users.selectMaps(new QueryWrapper<User>().select("id","name","student_no AS studentNo","owner_teacher_id AS ownerTeacherId")
-            .eq("role","STUDENT").eq("enabled",true).in("owner_teacher_id",pool).orderByAsc("id"));
+            .eq("role","STUDENT").eq("enabled",true)
+            .and(w->w.isNull("student_no").or().notLike("student_no",Accounts.ROSTER_STUDENT_PREFIX+"%"))
+            .in("owner_teacher_id",pool).orderByAsc("id"));
+    }
+    private String randomPet(){return PETS.get(random.nextInt(PETS.size()));}
+    private List<Long> createRosterStudents(User actor,List<String> names){
+        if(names==null||names.isEmpty())return List.of();
+        Problem.require("TEACHER".equals(actor.role),403,"只有老师可以直接录入活动名单");
+        Problem.require(names.size()<=200,400,"名单最多支持 200 位同学");
+        String inaccessiblePassword=passwords.encode(UUID.randomUUID().toString());
+        var ids=new ArrayList<Long>(names.size());
+        for(String raw:names){
+            String name=Accounts.clean(raw);
+            Problem.require(name!=null&&name.length()<=80,400,"学生姓名不能为空且最多 80 个字符");
+            var student=new User();student.name=name;
+            student.studentNo=Accounts.ROSTER_STUDENT_PREFIX+actor.id+":"+UUID.randomUUID().toString().replace("-","");
+            student.passwordHash=inaccessiblePassword;student.role="STUDENT";student.ownerTeacherId=actor.id;
+            student.enabled=true;student.authVersion=0;student.version=0;
+            users.insert(student);ids.add(student.id);
+        }
+        return ids;
     }
     private void relations(User actor,Activity a,Input input,boolean creating) {
         var teachers=new HashSet<>(input.teacherIds());teachers.remove(a.creatorId);
@@ -66,18 +96,37 @@ public class Activities {
         Draw p=creating?null:pending(a.id);
         Problem.require(p==null||students.contains(p.studentId),409,"请先处理待确认的点名结果，再移除此学生");
         activities.clearTeachers(a.id);for(Long id:teachers)activities.addTeacher(a.id,id);
-        activities.clearStudents(a.id);for(Long id:students)activities.addStudent(a.id,id);
+        activities.clearStudents(a.id);for(Long id:students){activities.addStudent(a.id,id);activities.assignPetIfMissing(a.id,id,randomPet());}
         activities.audit(actor.id,"ACTIVITY_MEMBERS_AND_SHARING",a.id);
     }
     @Transactional public Object create(User actor,Input input) {
         Access.staff(actor);var a=new Activity();a.name=input.name().strip();a.creatorId=actor.id;a.repeatDraw=input.repeatDraw();a.roundNo=1;a.version=0;a.deleted=0;
-        activities.insert(a);relations(actor,a,input,true);activities.audit(actor.id,"ACTIVITY_CREATE",a.id);return a;
+        activities.insert(a);
+        var studentIds=new LinkedHashSet<>(input.studentIds());studentIds.addAll(createRosterStudents(actor,input.studentNames()));
+        var resolved=new Input(input.name(),input.repeatDraw(),new ArrayList<>(studentIds),input.teacherIds(),input.studentNames(),input.version());
+        relations(actor,a,resolved,true);activities.audit(actor.id,"ACTIVITY_CREATE",a.id);return a;
     }
     @Transactional public Object update(User actor,Long id,Input input) {
         Access.staff(actor);var a=authorize(actor,id,true);
         Problem.require(input.version()!=null&&input.version().equals(a.version),409,"活动已被修改，请刷新后重试");
         if(!a.repeatDraw.equals(input.repeatDraw())) {Problem.require(pending(id)==null,409,"请先处理待确认的点名结果");a.roundNo++;}
-        relations(actor,a,input,false);a.name=input.name().strip();a.repeatDraw=input.repeatDraw();
+        Input resolved=input;
+        if(input.studentNames()!=null) {
+            var reusable=new HashMap<String,ArrayDeque<Long>>();
+            for(var member:activities.members(id)) {
+                String memberName=String.valueOf(member.get("name"));
+                reusable.computeIfAbsent(memberName,k->new ArrayDeque<>()).add(((Number)member.get("id")).longValue());
+            }
+            var desired=new LinkedHashSet<Long>(input.studentIds());var newNames=new ArrayList<String>();
+            for(String name:input.studentNames()) {
+                var matches=reusable.get(name.strip());
+                if(matches!=null&&!matches.isEmpty())desired.add(matches.removeFirst());
+                else newNames.add(name);
+            }
+            desired.addAll(createRosterStudents(actor,newNames));
+            resolved=new Input(input.name(),input.repeatDraw(),new ArrayList<>(desired),input.teacherIds(),input.studentNames(),input.version());
+        }
+        relations(actor,a,resolved,false);a.name=input.name().strip();a.repeatDraw=input.repeatDraw();
         Problem.require(activities.updateById(a)==1,409,"活动已被修改，请刷新");activities.audit(actor.id,"ACTIVITY_UPDATE",id);return a;
     }
     @Transactional public void delete(User actor,Long id) {

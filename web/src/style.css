@@ -192,6 +192,23 @@ text {
   gap: 16px;
   flex-shrink: 0;
 }
+.activity-actions {
+  gap: 9px;
+}
+.activity-actions .text-button {
+  min-width: 58px;
+  padding: 8px 9px;
+  white-space: nowrap;
+}
+.activity-actions .help-action {
+  min-width: 76px;
+}
+.activity-actions .console-action {
+  min-width: 76px;
+}
+.activity-actions .logout-action {
+  min-width: 48px;
+}
 .footnote {
   display: block;
   text-align: center;
@@ -391,6 +408,21 @@ text {
   font-size: 17px;
 }
 @media (max-width: 420px) {
+  .activity-actions {
+    gap: 5px;
+  }
+  .activity-actions .text-button {
+    padding-right: 6px;
+    padding-left: 6px;
+    font-size: 11px;
+  }
+  .activity-actions .help-action,
+  .activity-actions .console-action {
+    min-width: 68px;
+  }
+  .activity-actions .logout-action {
+    min-width: 40px;
+  }
   .about-page {
     padding-left: 20px;
     padding-right: 20px;

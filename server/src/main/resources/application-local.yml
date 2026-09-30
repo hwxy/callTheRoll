@@ -1,0 +1,32 @@
+server:
+  address: ${SERVER_ADDRESS:127.0.0.1}
+  port: ${PORT:8000}
+  error:
+    include-message: always
+
+spring:
+  datasource:
+    url: ${LOCAL_DB_URL:jdbc:mysql://127.0.0.1:33306/rollcall_dev?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai}
+    username: ${LOCAL_DB_USER:root}
+    password: ${LOCAL_DB_PASSWORD:}
+    hikari:
+      connection-init-sql: "SET time_zone = '+08:00'"
+  data:
+    redis:
+      host: ${LOCAL_REDIS_HOST:127.0.0.1}
+      port: ${LOCAL_REDIS_PORT:6379}
+      password: ${LOCAL_REDIS_PASSWORD:}
+      database: ${LOCAL_REDIS_DATABASE:0}
+      timeout: 2s
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+app:
+  cors-origins: ${LOCAL_CORS_ORIGINS:http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174}
+  bootstrap:
+    login: ${LOCAL_BOOTSTRAP_LOGIN:}
+    password: ${LOCAL_BOOTSTRAP_PASSWORD:}

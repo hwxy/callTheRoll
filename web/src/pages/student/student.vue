@@ -141,7 +141,6 @@ onPullDownRefresh(load)
         ><view v-if="!growth.records.length" class="small-empty"
           ><text class="hint">第一份鼓励，正在下一次勇敢举手中等你。</text></view
         ></view
-      ><text class="footnote">每场活动独立成长 · 下拉可刷新</text></template
-    ></view
-  >
+      ><text class="footnote">每场活动独立成长 · 下拉可刷新</text></template>
+    </view>
 </template>

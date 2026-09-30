@@ -20,6 +20,7 @@ const form = reactive({
   repeatDraw: false,
   studentIds: [],
   teacherIds: [],
+  teacherAccounts: '',
   version: null,
 })
 function changeTab(key) {
@@ -30,6 +31,16 @@ function changeTab(key) {
 const historyOpen = ref(false),
   records = ref([]),
   historyName = ref('')
+function enteredTeacherIds() {
+  const accounts = form.teacherAccounts
+    .split(/[\s,，;；]+/)
+    .map((account) => account.trim())
+    .filter(Boolean)
+  return [...new Set(accounts.flatMap((account) => {
+    const teacher = teachers.value.find((item) => item.phone === account || item.studentNo === account)
+    return teacher ? [teacher.id] : []
+  }))]
+}
 async function load() {
   loading.value = true
   error.value = ''
@@ -47,7 +58,8 @@ async function candidates() {
   try {
     const query = new URLSearchParams()
     if (form.id) query.set('activityId', form.id)
-    if (form.teacherIds.length) query.set('teacherIds', form.teacherIds.join(','))
+    const teacherIds = enteredTeacherIds()
+    if (teacherIds.length) query.set('teacherIds', teacherIds.join(','))
     const result = await api(`/activities/candidates?${query}`)
     const merged = new Map(initialMembers.value.map((s) => [s.id, s]))
     result.forEach((s) => merged.set(s.id, s))
@@ -67,11 +79,20 @@ async function edit(item) {
       repeatDraw: false,
       studentIds: [],
       teacherIds: [],
+      teacherAccounts: '',
       version: null,
     })
     if (item) {
       const r = await api(`/activities/${item.id}`)
-      Object.assign(form, r.activity, { studentIds: r.studentIds, teacherIds: r.teacherIds })
+      Object.assign(form, r.activity, {
+        studentIds: r.studentIds,
+        teacherIds: r.teacherIds,
+        teacherAccounts: teachers.value
+          .filter((teacher) => r.teacherIds.includes(teacher.id))
+          .map((teacher) => teacher.phone || teacher.studentNo)
+          .filter(Boolean)
+          .join('\n'),
+      })
       initialMembers.value = r.members
     }
     await candidates()
@@ -85,6 +106,20 @@ async function save() {
     ElMessage.warning('请输入活动名称')
     return
   }
+  const teacherAccounts = [...new Set(form.teacherAccounts.split(/[\s,，;；]+/).map((account) => account.trim()).filter(Boolean))]
+  const selectedTeachers = []
+  for (const account of teacherAccounts) {
+    const teacher = teachers.value.find((item) => item.phone === account || item.studentNo === account)
+    if (!teacher) {
+      ElMessage.error(`未找到老师账号「${account}」，请检查账号是否存在或已启用`)
+      return
+    }
+    if (teacher.id === (form.creatorId || props.user.id)) {
+      ElMessage.error('不能将活动共享给创建者本人')
+      return
+    }
+    selectedTeachers.push(teacher.id)
+  }
   const existing = items.value.find((a) => a.id === form.id)
   if (existing && existing.repeatDraw !== form.repeatDraw) {
     try {
@@ -97,7 +132,7 @@ async function save() {
   try {
     await api(form.id ? `/activities/${form.id}` : '/activities', {
       method: form.id ? 'PUT' : 'POST',
-      body: form,
+      body: { ...form, teacherIds: selectedTeachers },
     })
     dialog.value = false
     ElMessage.success('活动已保存')
@@ -230,20 +265,15 @@ onMounted(load)
             ><el-radio :value="false">本轮不重复</el-radio
             ><el-radio :value="true">允许重复点名</el-radio></el-radio-group
           ></el-form-item
-        ><el-form-item label="共享给老师"
-          ><el-select
-            v-model="form.teacherIds"
-            multiple
-            filterable
-            placeholder="选择共同管理的老师"
-            @change="candidates"
-            ><el-option
-              v-for="t in teachers.filter((t) => t.id !== (form.creatorId || user.id))"
-              :key="t.id"
-              :value="t.id"
-              :label="t.name" /></el-select
-          ><small class="field-help"
-            >共享老师拥有完整权限，包括删除活动及继续共享。</small
+        ><el-form-item label="共享老师账号"
+          ><el-input
+            v-model="form.teacherAccounts"
+            type="textarea"
+            :rows="3"
+            placeholder="例如：13800000000；多个账号可换行或用逗号分隔"
+            @change="candidates" />
+          <small class="field-help"
+            >保存时会校验账号是否存在且为已启用的老师；共享老师拥有完整活动管理权限。</small
           ></el-form-item
         ><el-form-item label="参与学生"
           ><el-select
